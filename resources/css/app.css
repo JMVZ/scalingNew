@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilos personalizados del proyecto Scaling */
+.login-gradient {
+  background-image: linear-gradient(130deg, #7633ff 0%, #a238ff 45%, #ff4fd2 100%);
+  background-size: 240% 240%;
+  animation: loginGradientShift 26s ease-in-out infinite;
+  will-change: transform, background-position;
+  clip-path: var(--login-clip-path);
+}
+
+.login-gradient-highlight {
+  background-image: radial-gradient(
+    circle at 45% 25%,
+    rgba(255, 255, 255, 0.75),
+    rgba(255, 255, 255, 0)
+  );
+  opacity: 0.85;
+  animation: loginGlowDrift 35s ease-in-out infinite;
+  mix-blend-mode: screen;
+  clip-path: var(--login-clip-path);
+}
+
+.login-gradient-dots {
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.35) 1px,
+    transparent 1px
+  );
+  background-size: 18px 18px;
+  opacity: 0.35;
+  animation: loginDotsFloat 42s linear infinite;
+  clip-path: var(--login-clip-path);
+}
+
+@keyframes loginGradientShift {
+  0% {
+    background-position: 0% 50%;
+    transform: translate3d(-3%, 1%, 0) scale(0.98);
+  }
+  50% {
+    background-position: 100% 50%;
+    transform: translate3d(3%, -2%, 0) scale(1.02);
+  }
+  100% {
+    background-position: 0% 50%;
+    transform: translate3d(-3%, 1%, 0) scale(0.98);
+  }
+}
+
+@keyframes loginGlowDrift {
+  0% {
+    transform: translate3d(-5%, -5%, 0) scale(0.95);
+  }
+  50% {
+    transform: translate3d(4%, 3%, 0) scale(1.05);
+  }
+  100% {
+    transform: translate3d(-5%, -5%, 0) scale(0.95);
+  }
+}
+
+@keyframes loginDotsFloat {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-30px);
+  }
+}
+
+/* Tarjeta decorativa con degradado animado */
+.bg-gradient-card {
+  background: linear-gradient(135deg, #7c40ff 0%, #a238ff 40%, #ff4fd2 100%);
+  background-size: 200% 200%;
+  animation: gradientCardShift 18s ease-in-out infinite;
+  will-change: background-position;
+}
+
+@keyframes gradientCardShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Animaciones para los blobs de gradiente */
+.gradient-blob-animate {
+  animation: blobFloat 20s ease-in-out infinite;
+  filter: blur(1px);
+}
+
+.gradient-blob-animate-alt {
+  animation: blobFloatAlt 24s ease-in-out infinite;
+  filter: blur(1px);
+}
+
+@keyframes blobFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-2%, 1%) scale(1.02);
+  }
+  66% {
+    transform: translate(1%, -1%) scale(0.98);
+  }
+}
+
+@keyframes blobFloatAlt {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(1%, -1%) scale(0.98);
+  }
+  66% {
+    transform: translate(-1%, 2%) scale(1.02);
+  }
+}
+
+:root {
+  --login-clip-path: path(
+    "M0,420 C260,360 600,420 880,380 C1080,350 1350,260 2100,360 L2100,900 L0,900 Z"
+  );
+}
+
+@media (max-width: 768px) {
+  :root {
+    --login-clip-path: path(
+      "M0,360 C200,320 460,360 680,330 C860,305 1040,250 1500,340 L1500,900 L0,900 Z"
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-gradient,
+  .login-gradient-highlight,
+  .login-gradient-dots,
+  .bg-gradient-card,
+  .gradient-blob-animate,
+  .gradient-blob-animate-alt {
+    animation-duration: 0.001s;
+    animation-iteration-count: 1;
+  }
+}
