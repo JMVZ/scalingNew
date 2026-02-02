@@ -32,7 +32,39 @@ export function useMenu() {
     };
 
     const isModuleActive = (module) => {
-        return module.items.some(item => currentPath.value.startsWith(item.route));
+        const path = currentPath.value;
+        
+        // Buscar todos los items de todos los módulos que coinciden con la ruta actual
+        const allMatchingItems = menuConfig.modules
+            .flatMap(m => m.items.map(item => ({ ...item, moduleId: m.id })))
+            .filter(item => {
+                if (item.route === '/dashboard') {
+                    return path === '/dashboard';
+                }
+                return path === item.route || path.startsWith(item.route + '/') || path.startsWith(item.route + '?');
+            })
+            .sort((a, b) => {
+                // Primero por longitud de ruta (más específico primero)
+                if (b.route.length !== a.route.length) {
+                    return b.route.length - a.route.length;
+                }
+                // Si tienen la misma longitud, priorizar "datos-maestros"
+                if (a.moduleId === 'datos-maestros' && b.moduleId !== 'datos-maestros') {
+                    return -1;
+                }
+                if (b.moduleId === 'datos-maestros' && a.moduleId !== 'datos-maestros') {
+                    return 1;
+                }
+                return 0;
+            });
+        
+        if (allMatchingItems.length === 0) {
+            return false;
+        }
+        
+        // Solo activo si este módulo tiene el item con mayor prioridad
+        const topItem = allMatchingItems[0];
+        return topItem.moduleId === module.id;
     };
 
     const isItemActive = (item) => {
@@ -43,29 +75,44 @@ export function useMenu() {
             return path === '/dashboard';
         }
 
-        // Comparación exacta primero
-        if (path === item.route) {
-            return true;
+        // Verificar si la ruta coincide
+        const routeMatches = path === item.route || path.startsWith(item.route + '/') || path.startsWith(item.route + '?');
+        
+        if (!routeMatches) {
+            return false;
         }
 
-        // Si la ruta actual empieza con la ruta del item
-        if (path.startsWith(item.route)) {
-            // Buscar el módulo al que pertenece este item
-            const module = menuConfig.modules.find(m => m.items.some(i => i.id === item.id));
-            if (module) {
-                // Verificar si hay otro item en el mismo módulo con una ruta más específica que también coincida
-                const moreSpecificItem = module.items.find(i =>
-                    i.id !== item.id &&
-                    path.startsWith(i.route) &&
-                    i.route.length > item.route.length
-                );
-                // Solo activo si no hay un item más específico
-                return !moreSpecificItem;
-            }
-            return true;
+        // Buscar todos los items que coinciden con esta ruta
+        const allMatchingItems = menuConfig.modules
+            .flatMap(m => m.items.map(i => ({ ...i, moduleId: m.id })))
+            .filter(i => {
+                if (i.route === '/dashboard') {
+                    return path === '/dashboard';
+                }
+                return path === i.route || path.startsWith(i.route + '/') || path.startsWith(i.route + '?');
+            })
+            .sort((a, b) => {
+                // Primero por longitud de ruta (más específico primero)
+                if (b.route.length !== a.route.length) {
+                    return b.route.length - a.route.length;
+                }
+                // Si tienen la misma longitud, priorizar "datos-maestros"
+                if (a.moduleId === 'datos-maestros' && b.moduleId !== 'datos-maestros') {
+                    return -1;
+                }
+                if (b.moduleId === 'datos-maestros' && a.moduleId !== 'datos-maestros') {
+                    return 1;
+                }
+                return 0;
+            });
+        
+        // Solo activo si este item es el de mayor prioridad
+        if (allMatchingItems.length === 0) {
+            return false;
         }
-
-        return false;
+        
+        const topItem = allMatchingItems[0];
+        return topItem.route === item.route && topItem.moduleId === menuConfig.modules.find(m => m.items.some(i => i.id === item.id))?.id;
     };
 
     // Detectar módulo activo basado en la ruta actual

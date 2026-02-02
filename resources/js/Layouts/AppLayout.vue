@@ -17,28 +17,74 @@ const {
     currentPath 
 } = useMenu();
 
-// Auto-abrir módulo activo al cargar (solo uno a la vez)
-watch(() => page.url, (newUrl) => {
-    const activeModule = menuConfig.modules.find(module => 
-        module.items.some(item => {
-            if (item.route === '/dashboard') {
-                return newUrl === '/dashboard';
+// Flag para controlar si el usuario cerró el menú manualmente
+let userClosedMenu = false;
+let menuCloseTimeout = null;
+let isInitialLoad = true;
+
+// Auto-abrir módulo activo solo cuando el usuario navega (no en carga inicial)
+watch(() => page.url, (newUrl, oldUrl) => {
+    // En la carga inicial, no abrir ningún menú
+    if (isInitialLoad) {
+        isInitialLoad = false;
+        openModules.value.clear();
+        return;
+    }
+    
+    // Si el usuario cerró el menú manualmente, no volver a abrirlo automáticamente
+    if (userClosedMenu) {
+        userClosedMenu = false;
+        return;
+    }
+    
+    // Solo auto-abrir si hay una navegación real (no recarga de página)
+    if (oldUrl && oldUrl !== newUrl) {
+        // Pequeño delay para permitir que la transición de cierre se complete
+        setTimeout(() => {
+            const activeModule = menuConfig.modules.find(module => 
+                module.items.some(item => {
+                    if (item.route === '/dashboard') {
+                        return newUrl === '/dashboard';
+                    }
+                    return newUrl === item.route || newUrl.startsWith(item.route + '/') || newUrl.startsWith(item.route + '?');
+                })
+            );
+            if (activeModule) {
+                // Solo abrir si el módulo no está ya abierto
+                if (!openModules.value.has(activeModule.id)) {
+                    openModules.value.clear();
+                    openModules.value.add(activeModule.id);
+                }
+            } else {
+                // Si no hay módulo activo, cerrar todos
+                openModules.value.clear();
             }
-            return newUrl.startsWith(item.route);
-        })
-    );
-    if (activeModule) {
-        // Cerrar todos los módulos y abrir solo el activo
-        openModules.value.clear();
-        openModules.value.add(activeModule.id);
-    } else {
-        // Si no hay módulo activo, cerrar todos
-        openModules.value.clear();
+        }, 100);
     }
 }, { immediate: true });
 
 // Detectar si dashboard está activo
 const isDashboardActive = computed(() => currentPath.value === '/dashboard');
+
+// Función para manejar el clic en un item del menú
+const handleItemClick = () => {
+    // Marcar que el usuario cerró el menú manualmente
+    userClosedMenu = true;
+    
+    // Limpiar timeout anterior si existe
+    if (menuCloseTimeout) {
+        clearTimeout(menuCloseTimeout);
+    }
+    
+    // Cerrar el menú con un pequeño delay para que se vea la transición
+    menuCloseTimeout = setTimeout(() => {
+        closeAllModules();
+        // Resetear el flag después de un tiempo para permitir auto-abrir en navegación futura
+        setTimeout(() => {
+            userClosedMenu = false;
+        }, 500);
+    }, 150);
+};
 </script>
 
 <template>
@@ -92,7 +138,7 @@ const isDashboardActive = computed(() => currentPath.value === '/dashboard');
                             <button
                                 @click="toggleModule(module.id)"
                                 :class="[
-                                    isModuleActive(module) || isModuleOpen(module.id)
+                                    (isModuleActive(module) && !isModuleOpen(module.id)) || isModuleOpen(module.id)
                                         ? 'bg-gradient-to-r from-[#7c40ff] to-[#b436ff] text-white shadow-lg'
                                         : 'text-zinc-700 hover:bg-zinc-100',
                                     'flex h-12 w-12 items-center justify-center rounded-lg transition-all'
@@ -154,10 +200,10 @@ const isDashboardActive = computed(() => currentPath.value === '/dashboard');
         <!-- Paneles de Módulos - Solo uno visible a la vez -->
         <template v-for="module in menuConfig.modules" :key="module.id">
         <Transition
-            enter-active-class="transition duration-300 ease-out"
+            enter-active-class="transition-all duration-300 ease-out"
             enter-from-class="opacity-0 -translate-x-full"
             enter-to-class="opacity-100 translate-x-0"
-            leave-active-class="transition duration-200 ease-in"
+            leave-active-class="transition-all duration-250 ease-in"
             leave-from-class="opacity-100 translate-x-0"
             leave-to-class="opacity-0 -translate-x-full"
         >
@@ -188,13 +234,13 @@ const isDashboardActive = computed(() => currentPath.value === '/dashboard');
                                     <Link
                                     v-for="item in module.items"
                                     :key="item.id"
-                                    @click="closeAllModules()"
+                                    @click="handleItemClick"
                                     :href="item.route"
                                         :class="[
                                         isItemActive(item)
                                                 ? 'bg-[#7c40ff]/10 text-[#7c40ff] font-medium'
                                                 : 'text-zinc-700 hover:bg-zinc-50',
-                                            'flex items-center gap-3 rounded-lg px-4 py-3 transition'
+                                            'flex items-center gap-3 rounded-lg px-4 py-3 transition-colors duration-200'
                                         ]"
                                     >
                                     <svg class="h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
